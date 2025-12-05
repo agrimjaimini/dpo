@@ -1,7 +1,7 @@
 # DPO Training Configuration
 
 model:
-  model_name_or_path: "meta-llama/Meta-Llama-3-8B"  # Will be overridden by SFT model path
+  model_name_or_path: "meta-llama/Llama-3.1-8B"  # Will be overridden by SFT model path
   use_gradient_checkpointing: true
   torch_dtype: "bfloat16"
 
