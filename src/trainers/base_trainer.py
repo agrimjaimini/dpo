@@ -72,6 +72,7 @@ class BaseTrainer(ABC):
         self.fp16 = training_config.get("fp16", True)
         self.logging_steps = training_config.get("logging_steps", 10)
         self.eval_steps = training_config.get("eval_steps", 500)
+        self.run_eval = training_config.get("run_eval", True)
         self.save_steps = training_config.get("save_steps", 500)
         self.save_total_limit = training_config.get("save_total_limit", 3)
         self.seed = training_config.get("seed", 42)
@@ -90,7 +91,7 @@ class BaseTrainer(ABC):
         )
 
         self.eval_loader = None
-        if eval_dataset is not None:
+        if eval_dataset is not None and self.run_eval:
             self.eval_loader = DataLoader(
                 eval_dataset,
                 batch_size=self.per_device_batch_size,
@@ -258,7 +259,13 @@ class BaseTrainer(ABC):
                         metrics_tracker.reset()
 
                     # Evaluation
-                    if self.eval_loader and self.global_step % self.eval_steps == 0:
+                    if (
+                        self.run_eval
+                        and self.eval_loader
+                        and self.eval_steps
+                        and self.eval_steps > 0
+                        and self.global_step % self.eval_steps == 0
+                    ):
                         eval_metrics = self.evaluate()
                         self.logger.info(f"Eval metrics: {eval_metrics}")
 
@@ -273,7 +280,7 @@ class BaseTrainer(ABC):
                         self.save_checkpoint()
 
         # Final evaluation and checkpoint
-        if self.eval_loader:
+        if self.run_eval and self.eval_loader:
             eval_metrics = self.evaluate()
             self.logger.info(f"Final eval metrics: {eval_metrics}")
 

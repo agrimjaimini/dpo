@@ -36,6 +36,7 @@ class TrainingConfig(BaseModel):
     fp16: bool = True
     logging_steps: int = 10
     eval_steps: int = 500
+    run_eval: bool = True
     save_steps: int = 500
     save_total_limit: int = 3
     seed: int = 42
