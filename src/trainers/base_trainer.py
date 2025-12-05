@@ -102,9 +102,6 @@ class BaseTrainer(ABC):
         self.optimizer = self._create_optimizer()
         self.scheduler = self._create_scheduler()
 
-        # Setup mixed precision
-        self.scaler = torch.cuda.amp.GradScaler() if self.fp16 else None
-
         # Setup logging
         self.logger = logging.getLogger(__name__)
         logging_config = config.get("logging", {})
@@ -115,6 +112,21 @@ class BaseTrainer(ABC):
                 name=logging_config.get("wandb_run_name"),
                 config=config,
             )
+
+        # Setup mixed precision
+        self.use_autocast = self.fp16 and self.device.type == "cuda"
+        self._has_fp16_params = any(p.dtype == torch.float16 for p in self.model.parameters())
+        grad_scaler_enabled = self.use_autocast and not self._has_fp16_params
+
+        if self.use_autocast and self._has_fp16_params:
+            self.logger.warning(
+                "Model parameters are FP16; disabling GradScaler to avoid PyTorch FP16 unscale errors. "
+                "For mixed precision, keep weights in float32 and rely on autocast."
+            )
+        if self.use_autocast:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=grad_scaler_enabled)
+        else:
+            self.scaler = None
 
         # Training state
         self.global_step = 0
@@ -200,7 +212,7 @@ class BaseTrainer(ABC):
                         for k, v in batch.items()}
 
                 # Forward pass with mixed precision
-                if self.fp16:
+                if self.use_autocast:
                     with torch.cuda.amp.autocast():
                         loss = self.training_step(batch)
                         loss = loss / self.gradient_accumulation_steps
@@ -209,7 +221,7 @@ class BaseTrainer(ABC):
                     loss = loss / self.gradient_accumulation_steps
 
                 # Backward pass
-                if self.fp16:
+                if self.use_autocast:
                     self.scaler.scale(loss).backward()
                 else:
                     loss.backward()
@@ -219,7 +231,7 @@ class BaseTrainer(ABC):
 
                 # Optimizer step (after gradient accumulation)
                 if (step + 1) % self.gradient_accumulation_steps == 0:
-                    if self.fp16:
+                    if self.use_autocast:
                         self.scaler.unscale_(self.optimizer)
                         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
                         self.scaler.step(self.optimizer)
@@ -287,7 +299,7 @@ class BaseTrainer(ABC):
                 batch = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v
                         for k, v in batch.items()}
 
-                if self.fp16:
+                if self.use_autocast:
                     with torch.cuda.amp.autocast():
                         loss = self.training_step(batch)
                 else:
