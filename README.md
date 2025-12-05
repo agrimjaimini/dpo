@@ -78,26 +78,41 @@ python scripts/evaluate.py \
 
 Train on Google Colab's free GPUs (no local GPU needed):
 
-**Steps:**
+**Method A: Clone from GitHub (Recommended)**
 
-1. **Prepare your code:**
+1. **Push your code to GitHub:**
    ```bash
-   # Create a zip file of your project
-   cd /Users/agrimjaimini/Desktop/CS/Projects
-   zip -r dpo.zip dpo/ -x "dpo/venv/*" "dpo/.git/*" "dpo/outputs/*"
+   cd /Users/agrimjaimini/Desktop/CS/Projects/dpo
+   git add .
+   git commit -m "Add DPO training code"
+   git push
    ```
 
-2. **Open Colab notebook:**
-   - Upload `DPO_Training_Colab.ipynb` to Google Colab
-   - Or create new notebook and copy cells from the file
+2. **Open Colab:**
+   - Go to https://colab.research.google.com/
+   - Upload `DPO_Training_Colab.ipynb`
+   - Runtime → Change runtime type → GPU → Save
 
-3. **Set GPU runtime:**
-   - Runtime → Change runtime type → Hardware accelerator → **GPU** → Save
+3. **Update the clone command:**
+   - In the notebook, replace `YOUR_USERNAME` with your GitHub username
+   - Run the GitHub clone cell (Option B)
+   - Skip the upload cell (Option A)
 
-4. **Upload and run:**
-   - Upload `dpo.zip` when prompted
-   - Run all cells in order
-   - Training will use Colab's free T4 GPU (~16GB)
+4. **Run all cells:**
+   - Training will use Colab's free T4 GPU
+
+**Method B: Upload ZIP**
+
+1. **Package your code:**
+   ```bash
+   cd /Users/agrimjaimini/Desktop/CS/Projects/dpo
+   ./scripts/package_for_colab.sh
+   ```
+
+2. **Open Colab and upload:**
+   - Upload `DPO_Training_Colab.ipynb`
+   - Set Runtime → GPU
+   - Run Option A cell and upload `dpo.zip`
 
 **Benefits:**
 - ✅ Free GPU access (T4 GPU)

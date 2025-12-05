@@ -1,10 +1,19 @@
 """Sanity checks for the DPO training setup."""
 
 import sys
+import os
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add project root to path (handle both local and Colab environments)
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+# Also try common Colab paths
+if '/content/dpo' not in sys.path:
+    sys.path.insert(0, '/content/dpo')
+
+# Change to project directory
+os.chdir(project_root)
 
 import torch
 from transformers import AutoTokenizer
