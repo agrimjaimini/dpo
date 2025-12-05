@@ -35,11 +35,14 @@ runs/
 wandb/
 *.log
 
-# Data
-data/
+# Data (only ignore top-level data directory, not src/data/)
+/data/
 *.csv
 *.json
 *.jsonl
+# But don't ignore package.json, config.json, etc in node_modules or configs
+!configs/*.json
+!**/config.json
 
 # IDE
 .vscode/
