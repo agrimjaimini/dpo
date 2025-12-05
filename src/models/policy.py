@@ -135,6 +135,8 @@ class PolicyModel(nn.Module):
         max_new_tokens: int = 100,
         temperature: float = 1.0,
         top_p: float = 0.9,
+        do_sample: bool = True,
+        pad_token_id: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -151,14 +153,21 @@ class PolicyModel(nn.Module):
         Returns:
             Generated token IDs
         """
+        if "do_sample" in kwargs:
+            do_sample = kwargs.pop("do_sample")
+        if "pad_token_id" in kwargs:
+            pad_token_id = kwargs.pop("pad_token_id")
+        if pad_token_id is None:
+            pad_token_id = self.model.config.eos_token_id
+
         return self.model.generate(
             input_ids=input_ids,
             attention_mask=attention_mask,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
             top_p=top_p,
-            do_sample=True,
-            pad_token_id=self.model.config.eos_token_id,
+            do_sample=do_sample,
+            pad_token_id=pad_token_id,
             **kwargs,
         )
 
