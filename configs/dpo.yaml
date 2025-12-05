@@ -1,0 +1,43 @@
+# DPO Training Configuration
+
+model:
+  model_name_or_path: "gpt2"  # Will be overridden by SFT model path
+  use_gradient_checkpointing: true
+  torch_dtype: "float16"
+
+data:
+  dataset_name: "Anthropic/hh-rlhf"
+  max_length: 512
+  max_prompt_length: 256
+  train_split: "train"
+  val_ratio: 0.05
+  test_ratio: 0.05
+  num_proc: 4
+
+training:
+  learning_rate: 5.0e-6  # Much smaller than SFT
+  num_epochs: 1
+  per_device_batch_size: 4
+  gradient_accumulation_steps: 8
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  fp16: true
+  logging_steps: 10
+  eval_steps: 500
+  save_steps: 500
+  save_total_limit: 3
+  seed: 42
+
+# DPO-specific parameters
+beta: 0.1
+loss_type: "sigmoid"  # Options: sigmoid, ipo, hinge
+label_smoothing: 0.0
+
+output_dir: "outputs/dpo"
+
+logging:
+  log_level: "info"
+  use_wandb: false
+  wandb_project: "dpo-hh"
+  wandb_run_name: null
