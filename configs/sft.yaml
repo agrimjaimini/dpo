@@ -3,7 +3,7 @@
 model:
   model_name_or_path: "gpt2"
   use_gradient_checkpointing: true
-  torch_dtype: "float16"
+  torch_dtype: "float32"
 
 data:
   dataset_name: "Anthropic/hh-rlhf"
