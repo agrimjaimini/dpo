@@ -117,13 +117,21 @@ class BaseTrainer(ABC):
         # Setup mixed precision
         self.use_autocast = self.fp16 and self.device.type == "cuda"
         self._has_fp16_params = any(p.dtype == torch.float16 for p in self.model.parameters())
-        grad_scaler_enabled = self.use_autocast and not self._has_fp16_params
+        self._has_bf16_params = any(p.dtype == torch.bfloat16 for p in self.model.parameters())
+        self.autocast_dtype = torch.float16
+        if self._has_bf16_params:
+            self.autocast_dtype = torch.bfloat16
+
+        grad_scaler_enabled = self.use_autocast and not self._has_fp16_params and self.autocast_dtype == torch.float16
 
         if self.use_autocast and self._has_fp16_params:
             self.logger.warning(
                 "Model parameters are FP16; disabling GradScaler to avoid PyTorch FP16 unscale errors. "
                 "For mixed precision, keep weights in float32 and rely on autocast."
             )
+        if self.use_autocast and self.autocast_dtype == torch.bfloat16:
+            # GradScaler not needed/unsupported for bf16
+            self.logger.info("Using bf16 autocast without GradScaler.")
         if self.use_autocast:
             self.scaler = torch.cuda.amp.GradScaler(enabled=grad_scaler_enabled)
         else:
@@ -214,7 +222,7 @@ class BaseTrainer(ABC):
 
                 # Forward pass with mixed precision
                 if self.use_autocast:
-                    with torch.cuda.amp.autocast():
+                    with torch.autocast("cuda", dtype=self.autocast_dtype):
                         loss = self.training_step(batch)
                         loss = loss / self.gradient_accumulation_steps
                 else:
@@ -307,7 +315,7 @@ class BaseTrainer(ABC):
                         for k, v in batch.items()}
 
                 if self.use_autocast:
-                    with torch.cuda.amp.autocast():
+                    with torch.autocast("cuda", dtype=self.autocast_dtype):
                         loss = self.training_step(batch)
                 else:
                     loss = self.training_step(batch)

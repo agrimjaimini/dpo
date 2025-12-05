@@ -71,12 +71,22 @@ def main():
         logger.info(f"Loading DPO model: {args.dpo_model}")
         models["dpo"] = PolicyModel(args.dpo_model, torch_dtype="float16")
 
-    # Load tokenizer (from first available model path)
-    tokenizer_path = args.dpo_model or args.sft_model or args.reference_model
+    # Load tokenizer from reference model to keep vocab aligned across models.
+    tokenizer_path = args.reference_model
     logger.info(f"Loading tokenizer from: {tokenizer_path}")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+
+    # Sanity-check vocab alignment between tokenizer and models to avoid CUDA asserts
+    tokenizer_vocab_size = len(tokenizer)
+    for name, model in models.items():
+        model_vocab_size = getattr(model.model.config, "vocab_size", None)
+        if model_vocab_size and model_vocab_size != tokenizer_vocab_size:
+            raise ValueError(
+                f"Tokenizer vocab size ({tokenizer_vocab_size}) does not match model '{name}' "
+                f"vocab size ({model_vocab_size}). Use matching model/tokenizer family."
+            )
 
     # Load test data
     logger.info("\nLoading test dataset...")
