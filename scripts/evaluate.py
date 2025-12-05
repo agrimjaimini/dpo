@@ -71,8 +71,8 @@ def main():
         logger.info(f"Loading DPO model: {args.dpo_model}")
         models["dpo"] = PolicyModel(args.dpo_model, torch_dtype="float16")
 
-    # Load tokenizer from reference model to keep vocab aligned across models.
-    tokenizer_path = args.reference_model
+    # Choose tokenizer source: prefer SFT, then DPO, then reference.
+    tokenizer_path = args.sft_model or args.dpo_model or args.reference_model
     logger.info(f"Loading tokenizer from: {tokenizer_path}")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     if tokenizer.pad_token is None:
@@ -85,7 +85,8 @@ def main():
         if model_vocab_size and model_vocab_size != tokenizer_vocab_size:
             raise ValueError(
                 f"Tokenizer vocab size ({tokenizer_vocab_size}) does not match model '{name}' "
-                f"vocab size ({model_vocab_size}). Use matching model/tokenizer family."
+                f"vocab size ({model_vocab_size}). Use matching model/tokenizer family "
+                f"(e.g., keep reference/SFT/DPO all on Mistral or all on GPT2)."
             )
 
     # Load test data
