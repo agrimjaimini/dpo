@@ -1,7 +1,7 @@
 # DPO Training Configuration
 
 model:
-  model_name_or_path: "meta-llama/Llama-3.1-8B"  # Will be overridden by SFT model path
+  model_name_or_path: "openai/gpt-oss-20b"  # Will be overridden by SFT model path
   use_gradient_checkpointing: true
   torch_dtype: "bfloat16"
 
@@ -18,7 +18,7 @@ training:
   learning_rate: 5.0e-6  # Much smaller than SFT
   num_epochs: 1
   per_device_batch_size: 1
-  gradient_accumulation_steps: 16
+  gradient_accumulation_steps: 32
   warmup_ratio: 0.1
   weight_decay: 0.01
   max_grad_norm: 1.0
